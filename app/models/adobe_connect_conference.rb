@@ -1,0 +1,177 @@
+#
+# Copyright (C) 2012 Instructure, Inc.
+#
+# This file is part of Canvas.
+#
+# Canvas is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation, version 3 of the License.
+#
+# Canvas is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+
+class AdobeConnectConference < WebConference
+  # Public: Start a new conference and return its key. (required by WebConference)
+  #
+  # Returns a conference key string.
+  def initiate_conference
+    unless @conference_key.present?
+      create_meeting unless meeting_exists?
+      save
+    end
+
+    find_conference_key
+  end
+
+  # Public: Determine the status of the conference (required by WebConference).
+  #
+  # Returns conference status as a symbol (either :active or :closed).
+  def conference_status
+    meeting_exists? && Time.now < end_at ? :active : :closed
+  end
+
+  # Public: Add an admin to the conference and create a meeting URL (required by WebConference).
+  #
+  # admin - The user to add to the conference as an admin.
+  # _ - Included for compatibility w/ web_conference.rb
+  #
+  # Returns a meeting URL string.
+  def admin_join_url(admin, _ = nil)
+    user = add_host(admin)
+    key = CanvasConnect::Service.user_session(user, config[:domain])
+    "#{meeting_url}?session=#{key}"
+  end
+
+  # Public: Add a participant to the conference and create a meeting URL.
+  #         Make the user a conference admin if they have permissions to create
+  #         a conference (required by WebConference).
+  #
+  # user - The user to add to the conference as an admin.
+  # _ - Included for compatibility w/ web_conference.rb
+  #
+  # Returns a meeting URL string.
+  def participant_join_url(user, _ = nil)
+    if grants_right?(user, nil, :initiate)
+      admin_join_url(user)
+    else
+      "#{meeting_url}?guestName=#{URI.escape(user.name)}"
+    end
+  end
+
+  protected
+  # Internal: Retrieve the SCO-ID for this meeting.
+  #
+  # Returns an SCO-ID string.
+  def find_conference_key
+    unless @conference_key.present?
+      response = connect_service.sco_by_url(:url_path => meeting_url_suffix)
+      @conference_key = response.body.xpath('//sco[@sco-id]').attr('sco-id').value
+    end
+
+    @conference_key
+  end
+
+  # Internal: Register a participant as a host.
+  #
+  # user - The user to add as a conference admin.
+  #
+  # Returns the CanvasConnect::ConnectUser.
+  def add_host(user)
+    connect_user = CanvasConnect::ConnectUser.find_or_create(user)
+    connect_service.permissions_update(
+      :acl_id => find_conference_key,
+      :principal_id => connect_user.id,
+      :permission_id => 'host')
+
+    connect_user
+  end
+
+  # Internal: Create a new Connect meeting.
+  #
+  # Returns nothing.
+  def create_meeting
+    params = { :type => 'meeting',
+               :name => meeting_name,
+               :folder_id => meeting_folder.id,
+               :date_begin => start_at.iso8601,
+               :url_path => meeting_url_suffix }
+    params[:end_at] = end_at.iso8601 if end_at.present?
+
+    result = connect_service.sco_update(params)
+    if result.body.xpath('//status[@code="ok"]').empty?
+      error = result.body.at_xpath('//invalid')
+      Rails.logger.error "Adobe Connect error on meeting create. Field: #{error['field']}, Value: #{error['subcode']}"
+
+      if error['field'] == 'folder-id'
+        throw MeetingFolderError.new("Folder '#{CanvasConnect.config[:meeting_folder]}' doesn't exist!")
+      end
+
+      return nil
+    end
+
+    sco_id = result.body.at_xpath('//sco')['sco-id']
+    make_meeting_public(sco_id)
+  end
+
+  # Internal: Make a given meeting publicly accessible.
+  #
+  # sco_id - The meeting's SCO-ID string.
+  #
+  # Returns the request object.
+  def make_meeting_public(sco_id)
+    connect_service.permissions_update(:acl_id => sco_id,
+                                       :principal_id => 'public-access',
+                                       :permission_id => 'view-hidden')
+  end
+
+  # Internal: Determine if this meeting exists in Adobe Connect.
+  #
+  # Returns a boolean.
+  def meeting_exists?
+    result = connect_service.sco_by_url(:url_path => meeting_url_suffix)
+    result.body.xpath('//status[@code="ok"]').present?
+  end
+
+  # Internal: Create a unique meeting name from the course and conference IDs.
+  #
+  # Returns a meeting name string.
+  def meeting_name
+    "#{self.context.course_code}: #{self.title} [#{self.id}]"
+  end
+  memoize :meeting_name
+
+  # Internal: Generate the base URL for the meeting.
+  def meeting_url
+    "#{config[:domain]}/#{meeting_url_suffix}"
+  end
+  memoize :meeting_url
+
+  # Internal: Generate a URL suffix for this conference.
+  #
+  # Returns a URL suffix string of format "canvas-meeting-:id".
+  def meeting_url_suffix
+    "canvas-meeting-#{self.id}"
+  end
+  memoize :meeting_url_suffix
+
+  # Internal: Get and cache a reference to the remote folder.
+  #
+  # Returns a CanvasConnect::MeetingFolder.
+  def meeting_folder
+    @meeting_folder ||= CanvasConnect::MeetingFolder.new(config[:meeting_container])
+  end
+
+  # Internal: Manage a connection to an Adobe Connect API.
+  #
+  # Returns a CanvasConnect::Service object.
+  def connect_service
+    CanvasConnect.client
+  end
+end
+
