@@ -34,8 +34,8 @@ module CanvasConnect
     # Returns true.
     def save
       response = @client.principal_update(
-        :first_name => @canvas_user.first_name,
-        :last_name => @canvas_user.last_name,
+        :first_name => @canvas_user.first_name.present? ? @canvas_user.first_name : 'Unknown',
+        :last_name => @canvas_user.last_name.present? ? @canvas_user.last_name : 'Unknown',
         :login => username,
         :password => password,
         :type => 'user',

@@ -33,7 +33,13 @@ class AdobeConnectConference < WebConference
   #
   # Returns conference status as a symbol (either :active or :closed).
   def conference_status
-    meeting_exists? && Time.now < end_at ? :active : :closed
+    if meeting_exists? && end_at.present? && Time.now < end_at
+      :active
+    elsif meeting_exists?
+      :active
+    else
+      :closed
+    end
   end
 
   # Public: Add an admin to the conference and create a meeting URL (required by WebConference).
@@ -109,7 +115,7 @@ class AdobeConnectConference < WebConference
       Rails.logger.error "Adobe Connect error on meeting create. Field: #{error['field']}, Value: #{error['subcode']}"
 
       if error['field'] == 'folder-id'
-        throw MeetingFolderError.new("Folder '#{CanvasConnect.config[:meeting_folder]}' doesn't exist!")
+        throw CanvasConnect::MeetingFolderError.new("Folder '#{CanvasConnect.config[:meeting_folder]}' doesn't exist!")
       end
 
       return nil
