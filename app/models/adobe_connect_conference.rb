@@ -142,7 +142,14 @@ class AdobeConnectConference < WebConference
   #
   # Returns a meeting name string.
   def meeting_name
-    "#{self.context.course_code}: #{self.title} [#{self.id}]"
+    course_code = if self.context.respond_to?(:course_code)
+                    self.context.course_code
+                  elsif self.context.context.respond_to?(:course_code)
+                    self.context.context.course_code
+                  else
+                    'Canvas'
+                  end
+    "#{course_code}: #{self.title} [#{self.id}]"
   end
   memoize :meeting_name
 
