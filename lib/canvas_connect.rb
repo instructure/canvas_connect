@@ -16,13 +16,13 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require "canvas_connect/version"
-require "canvas/plugins/validators/adobe_connect_validator"
-require "canvas/plugins/adobe_connect"
-require "canvas_connect/response"
-require "canvas_connect/meeting_folder"
-require "canvas_connect/connect_user"
-require "canvas_connect/service"
+require_dependency "canvas_connect/version"
+require_dependency "canvas/plugins/validators/adobe_connect_validator"
+require_dependency "canvas/plugins/adobe_connect"
+require_dependency "canvas_connect/response"
+require_dependency "canvas_connect/meeting_folder"
+require_dependency "canvas_connect/connect_user"
+require_dependency "canvas_connect/service"
 
 module CanvasConnect
   class ConnectionError < StandardError; end
@@ -38,7 +38,7 @@ module CanvasConnect
         ApplicationController.view_paths.unshift(view_path)
       end
 
-      require "models/adobe_connect_conference"
+      require_dependency "models/adobe_connect_conference"
 
       Canvas::Plugins::AdobeConnect.new
     end
