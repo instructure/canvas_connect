@@ -31,7 +31,7 @@ module CanvasConnect
       unless logged_in?
         response = login(:login => @username, :password => @password)
         if response.xpath('//status[@code="ok"]').empty?
-          raise ConnectionError.new("Could not log in to #{@domain}.")
+          raise ConnectionError.new("Could not log in to #{@domain} as #{@username}.")
         end
 
       @is_authenticated = true

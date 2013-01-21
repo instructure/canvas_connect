@@ -115,7 +115,7 @@ class AdobeConnectConference < WebConference
       Rails.logger.error "Adobe Connect error on meeting create. Field: #{error['field']}, Value: #{error['subcode']}"
 
       if error['field'] == 'folder-id'
-        throw CanvasConnect::MeetingFolderError.new("Folder '#{CanvasConnect.config[:meeting_folder]}' doesn't exist!")
+        throw CanvasConnect::MeetingFolderError.new("Folder '#{CanvasConnect.config[:meeting_container]}' doesn't exist!")
       end
 
       return nil

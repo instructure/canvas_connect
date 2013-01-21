@@ -53,7 +53,7 @@ module CanvasConnect
     #
     # Returns a username string.
     def username
-      "canvas_user_#{@canvas_user.id}"
+      @canvas_user.email
     end
 
     # Internal: Generate a 10 character password for Adobe Connect.
