@@ -19,10 +19,6 @@
 require_dependency "canvas_connect/version"
 require_dependency "canvas/plugins/validators/adobe_connect_validator"
 require_dependency "canvas/plugins/adobe_connect"
-require_dependency "canvas_connect/response"
-require_dependency "canvas_connect/meeting_folder"
-require_dependency "canvas_connect/connect_user"
-require_dependency "canvas_connect/service"
 
 module CanvasConnect
   class ConnectionError < StandardError; end
@@ -38,9 +34,10 @@ module CanvasConnect
         ApplicationController.view_paths.unshift(view_path)
       end
 
-      require_dependency "models/adobe_connect_conference"
+      require_dependency File.expand_path("../../models/adobe_connect_conference", File.dirname(__FILE__))
 
       Canvas::Plugins::AdobeConnect.new
+      self.config
     end
   end
 
@@ -48,15 +45,20 @@ module CanvasConnect
   #
   # Returns a settings hash.
   def self.config
-    Canvas::Plugin.find('adobe_connect').settings || {}
+    settings = Canvas::Plugin.find('adobe_connect').settings || {}
+    AdobeConnect::Config.declare do
+      username settings[:username]
+      password settings[:password]
+      domain   settings[:domain]
+    end
   end
 
   # Return a cached Connect Service object to make requests with.
   #
-  # Returns a CanvasConnect::Service.
+  # Returns a AdobeConnect::Service.
   def self.client
     unless @client
-      @client = Service.new(*self.config.values_at(:login, :password_dec, :domain))
+      @client = AdobeConnect::Service.new(*self.config.values_at(:login, :password_dec, :domain))
       @client.log_in
     end
 

@@ -17,6 +17,7 @@
 #
 
 class AdobeConnectConference < WebConference
+
   # Public: Start a new conference and return its key. (required by WebConference)
   #
   # Returns a conference key string.
@@ -50,7 +51,7 @@ class AdobeConnectConference < WebConference
   # Returns a meeting URL string.
   def admin_join_url(admin, _ = nil)
     user = add_host(admin)
-    key = CanvasConnect::Service.user_session(user, config[:domain])
+    key = AdobeConnect::Service.user_session(user, config[:domain])
     "#{meeting_url}?session=#{key}"
   end
 
@@ -89,7 +90,7 @@ class AdobeConnectConference < WebConference
   #
   # Returns the CanvasConnect::ConnectUser.
   def add_host(user)
-    connect_user = CanvasConnect::ConnectUser.find_or_create(user)
+    connect_user = AdobeConnect::User.find(user) || AdobeConnect::User.create(user)
     connect_service.permissions_update(
       :acl_id => find_conference_key,
       :principal_id => connect_user.id,
@@ -115,7 +116,7 @@ class AdobeConnectConference < WebConference
       Rails.logger.error "Adobe Connect error on meeting create. Field: #{error['field']}, Value: #{error['subcode']}"
 
       if error['field'] == 'folder-id'
-        throw CanvasConnect::MeetingFolderError.new("Folder '#{CanvasConnect.config[:meeting_container]}' doesn't exist!")
+        raise CanvasConnect::MeetingFolderError.new("Folder '#{config[:meeting_container]}' doesn't exist!")
       end
 
       return nil
@@ -144,10 +145,38 @@ class AdobeConnectConference < WebConference
     result.body.xpath('//status[@code="ok"]').present?
   end
 
+  def meeting_name
+    @cached_meeting_name ||= generate_meeting_name
+  end
+
+  def meeting_url
+    @cached_meeting_url ||= generate_meeting_url
+  end
+
+  def meeting_url_suffix
+    @cached_meeting_url_suffix ||= generate_meeting_url_suffix
+  end
+
+  # Internal: Get and cache a reference to the remote folder.
+  #
+  # Returns a CanvasConnect::MeetingFolder.
+  def meeting_folder
+    @meeting_folder ||= AdobeConnect::MeetingFolder.new(config[:meeting_container])
+  end
+
+  # Internal: Manage a connection to an Adobe Connect API.
+  #
+  # Returns a CanvasConnect::Service object.
+  def connect_service
+    CanvasConnect.client
+  end
+
+  private
+
   # Internal: Create a unique meeting name from the course and conference IDs.
   #
   # Returns a meeting name string.
-  def meeting_name
+  def generate_meeting_name
     course_code = if self.context.respond_to?(:course_code)
                     self.context.course_code
                   elsif self.context.context.respond_to?(:course_code)
@@ -157,34 +186,17 @@ class AdobeConnectConference < WebConference
                   end
     "#{course_code}: #{self.title} [#{self.id}]"
   end
-  memoize :meeting_name
 
   # Internal: Generate the base URL for the meeting.
-  def meeting_url
+  def generate_meeting_url
     "#{config[:domain]}/#{meeting_url_suffix}"
   end
-  memoize :meeting_url
 
   # Internal: Generate a URL suffix for this conference.
   #
   # Returns a URL suffix string of format "canvas-meeting-:id".
-  def meeting_url_suffix
+  def generate_meeting_url_suffix
     "canvas-meeting-#{self.id}"
-  end
-  memoize :meeting_url_suffix
-
-  # Internal: Get and cache a reference to the remote folder.
-  #
-  # Returns a CanvasConnect::MeetingFolder.
-  def meeting_folder
-    @meeting_folder ||= CanvasConnect::MeetingFolder.new(config[:meeting_container])
-  end
-
-  # Internal: Manage a connection to an Adobe Connect API.
-  #
-  # Returns a CanvasConnect::Service object.
-  def connect_service
-    CanvasConnect.client
   end
 end
 

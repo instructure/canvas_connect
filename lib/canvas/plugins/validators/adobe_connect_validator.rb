@@ -30,6 +30,7 @@ module Canvas
         #
         # Returns false on error or a hash of settings options.
         def self.validate(settings, plugin_setting)
+          settings.stringify_keys!
           filtered_settings = settings.slice(*REQUIRED_KEYS)
           if all_empty?(filtered_settings)
             # Allow no settings.
