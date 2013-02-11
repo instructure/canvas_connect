@@ -17,7 +17,7 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = %w{app lib}
 
+  gem.add_dependency 'rake', '>= 0.9.6'
   gem.add_dependency 'adobe_connect', '>= 0.0.2'
-  gem.add_development_dependency 'rake', '>= 0.9.6'
 end
 
