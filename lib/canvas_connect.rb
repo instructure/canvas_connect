@@ -16,6 +16,8 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
+require 'adobe_connect'
+
 require_dependency "canvas_connect/version"
 require_dependency "canvas/plugins/validators/adobe_connect_validator"
 require_dependency "canvas/plugins/adobe_connect"
@@ -37,7 +39,6 @@ module CanvasConnect
       require_dependency File.expand_path("../../models/adobe_connect_conference", File.dirname(__FILE__))
 
       Canvas::Plugins::AdobeConnect.new
-      self.config
     end
   end
 
@@ -51,6 +52,7 @@ module CanvasConnect
       password settings[:password]
       domain   settings[:domain]
     end
+    settings
   end
 
   # Return a cached Connect Service object to make requests with.
@@ -58,7 +60,13 @@ module CanvasConnect
   # Returns a AdobeConnect::Service.
   def self.client
     unless @client
-      @client = AdobeConnect::Service.new(*self.config.values_at(:login, :password_dec, :domain))
+      settings = self.config
+      connect_settings = {
+        :username => settings[:login],
+        :password => settings[:password_dec],
+        :domain   => settings[:domain]
+      }
+      @client = AdobeConnect::Service.new(connect_settings)
       @client.log_in
     end
 
