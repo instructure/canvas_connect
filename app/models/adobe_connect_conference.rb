@@ -51,8 +51,14 @@ class AdobeConnectConference < WebConference
   # Returns a meeting URL string.
   def admin_join_url(admin, _ = nil)
     user = add_host(admin)
-    key = AdobeConnect::Service.user_session(user, config[:domain])
-    "#{meeting_url}?session=#{key}"
+    connect_settings = {
+      :username => user.username,
+      :password => user.password,
+      :domain   => CanvasConnect.config[:domain]
+    }
+    ac_service = AdobeConnect::Service.new(connect_settings)
+    ac_service.log_in
+    "#{meeting_url}?session=#{ac_session.session}"
   end
 
   # Public: Add a participant to the conference and create a meeting URL.
@@ -161,7 +167,7 @@ class AdobeConnectConference < WebConference
   #
   # Returns a CanvasConnect::MeetingFolder.
   def meeting_folder
-    @meeting_folder ||= AdobeConnect::MeetingFolder.new(config[:meeting_container])
+    @meeting_folder ||= AdobeConnect::MeetingFolder.find(config[:meeting_container], CanvasConnect.client)
   end
 
   # Internal: Manage a connection to an Adobe Connect API.

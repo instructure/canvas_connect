@@ -36,7 +36,7 @@ module CanvasConnect
         ApplicationController.view_paths.unshift(view_path)
       end
 
-      require_dependency File.expand_path("../../models/adobe_connect_conference", File.dirname(__FILE__))
+      require_dependency File.expand_path("./../app/models/adobe_connect_conference", File.dirname(__FILE__))
 
       Canvas::Plugins::AdobeConnect.new
     end
@@ -48,8 +48,8 @@ module CanvasConnect
   def self.config
     settings = Canvas::Plugin.find('adobe_connect').settings || {}
     AdobeConnect::Config.declare do
-      username settings[:username]
-      password settings[:password]
+      username settings[:login]
+      password settings[:password_dec]
       domain   settings[:domain]
     end
     settings
