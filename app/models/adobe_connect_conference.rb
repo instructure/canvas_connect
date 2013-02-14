@@ -22,7 +22,7 @@ class AdobeConnectConference < WebConference
   #
   # Returns a conference key string.
   def initiate_conference
-    unless @conference_key.present?
+    unless conference_key.present?
       create_meeting unless meeting_exists?
       save
     end
@@ -51,14 +51,16 @@ class AdobeConnectConference < WebConference
   # Returns a meeting URL string.
   def admin_join_url(admin, _ = nil)
     user = add_host(admin)
-    connect_settings = {
-      :username => user.username,
-      :password => user.password,
-      :domain   => CanvasConnect.config[:domain]
-    }
-    ac_service = AdobeConnect::Service.new(connect_settings)
-    ac_service.log_in
-    "#{meeting_url}?session=#{ac_session.session}"
+    settings = { :username => user.username, :password => user.password,
+      :domain => CanvasConnect.config[:domain] }
+
+    Rails.logger.info "USERNAME: #{user.username}"
+    Rails.logger.info "PASSWORD: #{user.password}"
+
+    service = AdobeConnect::Service.new(settings)
+    service.log_in
+
+    "#{meeting_url}?session=#{service.session}"
   end
 
   # Public: Add a participant to the conference and create a meeting URL.
@@ -82,12 +84,15 @@ class AdobeConnectConference < WebConference
   #
   # Returns an SCO-ID string.
   def find_conference_key
-    unless @conference_key.present?
-      response = connect_service.sco_by_url(:url_path => meeting_url_suffix)
-      @conference_key = response.body.xpath('//sco[@sco-id]').attr('sco-id').value
+    unless conference_key.present?
+      self.conference_key = meeting_folder.
+        contents.
+        xpath("//sco[name=#{meeting_name.inspect}]").
+        attr('sco-id').
+        value
     end
 
-    @conference_key
+    conference_key
   end
 
   # Internal: Register a participant as a host.
@@ -178,7 +183,6 @@ class AdobeConnectConference < WebConference
   end
 
   private
-
   # Internal: Create a unique meeting name from the course and conference IDs.
   #
   # Returns a meeting name string.
@@ -190,10 +194,13 @@ class AdobeConnectConference < WebConference
                   else
                     'Canvas'
                   end
+
     "#{course_code}: #{self.title} [#{self.id}]"
   end
 
   # Internal: Generate the base URL for the meeting.
+  #
+  # Returns a meeting string.
   def generate_meeting_url
     "#{config[:domain]}/#{meeting_url_suffix}"
   end
