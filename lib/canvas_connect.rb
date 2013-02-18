@@ -38,6 +38,8 @@ module CanvasConnect
 
       require_dependency File.expand_path("./../app/models/adobe_connect_conference", File.dirname(__FILE__))
 
+      ActiveSupport::Dependencies.autoload_paths << File.expand_path("./../app/models", File.dirname(__FILE__))
+
       Canvas::Plugins::AdobeConnect.new
     end
   end
