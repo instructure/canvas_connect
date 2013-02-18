@@ -17,10 +17,7 @@
 #
 
 require 'adobe_connect'
-
-require_dependency "canvas_connect/version"
-require_dependency "canvas/plugins/validators/adobe_connect_validator"
-require_dependency "canvas/plugins/adobe_connect"
+require 'canvas_connect/version'
 
 module CanvasConnect
   class ConnectionError < StandardError; end
@@ -36,9 +33,10 @@ module CanvasConnect
         ApplicationController.view_paths.unshift(view_path)
       end
 
-      require_dependency File.expand_path("./../app/models/adobe_connect_conference", File.dirname(__FILE__))
+      ActiveSupport::Dependencies.autoload_paths.unshift(File.dirname(__FILE__) + '/../app/models')
 
-      ActiveSupport::Dependencies.autoload_paths << File.expand_path("./../app/models", File.dirname(__FILE__))
+      require_dependency "canvas/plugins/validators/adobe_connect_validator"
+      require_dependency "canvas/plugins/adobe_connect"
 
       Canvas::Plugins::AdobeConnect.new
     end
