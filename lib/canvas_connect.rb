@@ -28,13 +28,14 @@ module CanvasConnect
   # Returns nothing.
   def self.register
     Rails.configuration.to_prepare do
-      view_path = File.dirname(__FILE__) + '/../app/views'
+      view_path = File.expand_path('../app/views', File.dirname(__FILE__))
       unless ApplicationController.view_paths.include?(view_path)
         ApplicationController.view_paths.unshift(view_path)
       end
 
-      ActiveSupport::Dependencies.autoload_paths.unshift(File.dirname(__FILE__) + '/../app/models')
+      ActiveSupport::Dependencies.autoload_paths << File.expand_path('../app/models', File.dirname(__FILE__))
 
+      require_dependency File.expand_path('../app/models/adobe_connect_conference.rb', File.dirname(__FILE__))
       require_dependency "canvas/plugins/validators/adobe_connect_validator"
       require_dependency "canvas/plugins/adobe_connect"
 
