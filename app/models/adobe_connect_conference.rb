@@ -54,9 +54,6 @@ class AdobeConnectConference < WebConference
     settings = { :username => user.username, :password => user.password,
       :domain => CanvasConnect.config[:domain] }
 
-    Rails.logger.info "USERNAME: #{user.username}"
-    Rails.logger.info "PASSWORD: #{user.password}"
-
     service = AdobeConnect::Service.new(settings)
     service.log_in
 
@@ -101,7 +98,11 @@ class AdobeConnectConference < WebConference
   #
   # Returns the CanvasConnect::ConnectUser.
   def add_host(user)
-    connect_user = AdobeConnect::User.find(user) || AdobeConnect::User.create(user)
+    connect_email = "canvas_#{user.global_id}@instructure.com"
+    options = { first_name: user.first_name, last_name: user.last_name,
+      email: connect_email, login: connect_email, uuid: user.uuid }
+
+    connect_user = AdobeConnect::User.find(options) || AdobeConnect::User.create(options)
     connect_service.permissions_update(
       :acl_id => find_conference_key,
       :principal_id => connect_user.id,
