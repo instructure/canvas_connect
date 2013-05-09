@@ -98,9 +98,9 @@ class AdobeConnectConference < WebConference
   #
   # Returns the CanvasConnect::ConnectUser.
   def add_host(user)
-    connect_email = "canvas_#{user.global_id}@instructure.com"
+    connect_email = user.email.gsub(/@/, "+canvas-#{user.uuid}@")
     options = { first_name: user.first_name, last_name: user.last_name,
-      email: connect_email, login: connect_email, uuid: user.uuid }
+      email: connect_email, username: connect_email, uuid: user.uuid }
 
     connect_user = AdobeConnect::User.find(options) || AdobeConnect::User.create(options)
     connect_service.permissions_update(

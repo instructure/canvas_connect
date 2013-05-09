@@ -18,6 +18,6 @@ Gem::Specification.new do |gem|
   gem.require_paths = %w{app lib}
 
   gem.add_dependency 'rake', '>= 0.9.6'
-  gem.add_dependency 'adobe_connect', '>= 0.0.7'
+  gem.add_dependency 'adobe_connect', '~> 1.0.0'
 end
 
