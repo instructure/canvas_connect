@@ -18,6 +18,8 @@
 
 class AdobeConnectConference < WebConference
 
+  MAX_USERNAME_LENGTH = 60
+
   # Public: Start a new conference and return its key. (required by WebConference)
   #
   # Returns a conference key string.
@@ -98,9 +100,8 @@ class AdobeConnectConference < WebConference
   #
   # Returns the CanvasConnect::ConnectUser.
   def add_host(user)
-    connect_email = user.email.gsub(/@/, "+canvas-#{user.uuid}@")
     options = { first_name: user.first_name, last_name: user.last_name,
-      email: connect_email, username: connect_email, uuid: user.uuid }
+      email: connect_username(user), username: connect_username(user), uuid: user.uuid }
 
     connect_user = AdobeConnect::User.find(options) || AdobeConnect::User.create(options)
     connect_service.permissions_update(
@@ -109,6 +110,32 @@ class AdobeConnectConference < WebConference
       :permission_id => 'host')
 
     connect_user
+  end
+
+  # Internal: Generate a Connect username that is under 60 characters
+  #   (the username limit on our Connect instance).
+  #
+  # user - The Canvas user to generate a username for.
+  #
+  # Returns a username string.
+  def connect_username(user)
+    return @connect_username unless @connect_username.nil?
+
+    preferred_extension = 'canvas-connect'
+    current_address = user.email
+    allowed_length = MAX_USERNAME_LENGTH - current_address.length
+    allowed_length -= 1 unless current_address.match(/\+/)
+    postfix = if allowed_length >= preferred_extension.length
+      preferred_extension
+    else
+      user.uuid[0..allowed_length - 1]
+    end
+
+    @connect_username = if current_address.match(/\+/)
+      current_address.gsub(/\+/, "+#{postfix}")
+    else
+      current_address.gsub(/@/, "+#{postfix}@")
+    end
   end
 
   # Internal: Create a new Connect meeting.
