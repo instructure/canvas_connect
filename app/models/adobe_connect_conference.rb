@@ -78,7 +78,7 @@ class AdobeConnectConference < WebConference
   def participant_join_url(user, _ = nil)
     if grants_right?(user, nil, :initiate)
       admin_join_url(user)
-    elsif config[:use_sis_ids] == "yes" 
+    elsif config[:use_sis_ids] == "no" 
       "#{meeting_url}?guestName=#{URI.escape(user.name)}"
     else 
       meeting_url
