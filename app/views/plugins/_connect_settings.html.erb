@@ -32,6 +32,15 @@
           <%= f.password_field :password, :autocomplete => false %><br>
         </td>
       </tr>
+      <tr>
+        <td><%= f.label :use_sis_ids, "Use SIS IDs" %></td>
+        <td>
+          <%= f.check_box "use_sis_ids", {}, 'yes', 'no' %><br />
+          <small class="help-text">
+            <%= t(:use_sis_ids_description, "Use a user's SIS as their Connect login ID") %>
+          </small>
+        </td>
+      <tr>
     </tbody>
   </table>
 <% end %>

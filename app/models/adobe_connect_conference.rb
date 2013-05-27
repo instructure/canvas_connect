@@ -53,13 +53,18 @@ class AdobeConnectConference < WebConference
   # Returns a meeting URL string.
   def admin_join_url(admin, _ = nil)
     user = add_host(admin)
-    settings = { :username => user.username, :password => user.password,
-      :domain => CanvasConnect.config[:domain] }
 
-    service = AdobeConnect::Service.new(settings)
-    service.log_in
+    if config[:use_sis_ids] == "no" 
+      settings = { :username => user.username, :password => user.password,
+        :domain => CanvasConnect.config[:domain] }
 
-    "#{meeting_url}?session=#{service.session}"
+      service = AdobeConnect::Service.new(settings)
+      service.log_in
+
+      "#{meeting_url}?session=#{service.session}"
+    else
+      meeting_url
+    end 
   end
 
   # Public: Add a participant to the conference and create a meeting URL.
@@ -73,8 +78,10 @@ class AdobeConnectConference < WebConference
   def participant_join_url(user, _ = nil)
     if grants_right?(user, nil, :initiate)
       admin_join_url(user)
-    else
+    elsif config[:use_sis_ids] == "yes" 
       "#{meeting_url}?guestName=#{URI.escape(user.name)}"
+    else 
+      meeting_url
     end
   end
 
@@ -100,8 +107,21 @@ class AdobeConnectConference < WebConference
   #
   # Returns the CanvasConnect::ConnectUser.
   def add_host(user)
-    options = { first_name: user.first_name, last_name: user.last_name,
-      email: connect_username(user), username: connect_username(user), uuid: user.uuid }
+    options = config[:use_sis_ids] == "yes" ?
+      {
+        first_name: user.first_name,
+        last_name:  user.last_name,
+        email:      user.email,
+        username:   user.sis_user_id,
+        uuid:       user.uuid
+      } :
+      {
+        first_name:   user.first_name,
+        last_name:    user.last_name,
+        email:        connect_username(user),
+        username:     connect_username(user),
+        uuid:         user.uuid
+      }
 
     connect_user = AdobeConnect::User.find(options) || AdobeConnect::User.create(options)
     connect_service.permissions_update(
