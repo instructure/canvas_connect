@@ -112,7 +112,7 @@ class AdobeConnectConference < WebConference
         first_name: user.first_name,
         last_name:  user.last_name,
         email:      user.email,
-        username:   user.sis_pseudonym_for_account().try(:sis_user_id),
+        username:   user.sis_pseudonym_for(user.account).try(:sis_user_id),
         uuid:       user.uuid
       } :
       {
