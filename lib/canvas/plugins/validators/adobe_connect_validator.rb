@@ -21,7 +21,7 @@ module Canvas
     module Validators
       module AdobeConnectValidator
         # Public: An array of allowed plugin settings.
-        REQUIRED_KEYS = %w{domain login password meeting_container}
+        REQUIRED_KEYS = %w{domain login password meeting_container use_sis_ids}
 
         # Public: Validate setting input for this plugin.
         #
