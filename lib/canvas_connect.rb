@@ -22,6 +22,7 @@ require 'canvas_connect/version'
 module CanvasConnect
   class ConnectionError < StandardError; end
   class MeetingFolderError < StandardError; end
+  class MeetingNotFound < StandardError; end
 
   # Public: Configure as a Canvas plugin.
   #

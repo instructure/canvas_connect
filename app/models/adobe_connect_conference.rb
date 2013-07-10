@@ -36,9 +36,7 @@ class AdobeConnectConference < WebConference
   #
   # Returns conference status as a symbol (either :active or :closed).
   def conference_status
-    if meeting_exists? && end_at.present? && Time.now < end_at
-      :active
-    elsif meeting_exists?
+    if meeting_exists?
       :active
     else
       :closed
@@ -91,11 +89,14 @@ class AdobeConnectConference < WebConference
   # Returns an SCO-ID string.
   def find_conference_key
     unless conference_key.present?
-      self.conference_key = meeting_folder.
-        contents.
-        xpath("//sco[name=#{meeting_name.inspect}]").
-        attr('sco-id').
-        value
+      meeting_node = meeting_folder.contents.xpath("//sco[name=#{meeting_name.inspect}]")
+      # if meeting node exists, get that value
+      if meeting_node.present?
+        self.conference_key = meeting_node.attr('sco-id').value
+      else
+        # meeting node not found (by name)
+        raise CanvasConnect::MeetingNotFound, "Meeting with name '#{meeting_name}' not found"
+      end
     end
 
     conference_key
@@ -162,11 +163,13 @@ class AdobeConnectConference < WebConference
   #
   # Returns nothing.
   def create_meeting
+    url_id = meeting_url_suffix
+
     params = { :type => 'meeting',
                :name => meeting_name,
                :folder_id => meeting_folder.id,
                :date_begin => start_at.iso8601,
-               :url_path => meeting_url_suffix }
+               :url_path => url_id }
     params[:end_at] = end_at.iso8601 if end_at.present?
 
     result = connect_service.sco_update(params)
@@ -180,6 +183,9 @@ class AdobeConnectConference < WebConference
 
       return nil
     end
+
+    # if made it here, meeting was successfully created. Cache the meeting_url_suffix being used.
+    self.meeting_url_id = url_id
 
     sco_id = result.body.at_xpath('//sco')['sco-id']
     make_meeting_public(sco_id)
@@ -200,7 +206,7 @@ class AdobeConnectConference < WebConference
   #
   # Returns a boolean.
   def meeting_exists?
-    result = connect_service.sco_by_url(:url_path => meeting_url_suffix)
+    result = connect_service.sco_by_url(:url_path => meeting_url_id)
     result.body.xpath('//status[@code="ok"]').present?
   end
 
@@ -209,11 +215,7 @@ class AdobeConnectConference < WebConference
   end
 
   def meeting_url
-    @cached_meeting_url ||= generate_meeting_url
-  end
-
-  def meeting_url_suffix
-    @cached_meeting_url_suffix ||= generate_meeting_url_suffix
+    "#{config[:domain]}/#{meeting_url_id}"
   end
 
   # Internal: Get and cache a reference to the remote folder.
@@ -246,17 +248,32 @@ class AdobeConnectConference < WebConference
     "#{course_code}: #{self.title} [#{self.id}]"
   end
 
-  # Internal: Generate the base URL for the meeting.
+  # Internal: Get the unique ID to identify the meeting in an Adobe url.
   #
-  # Returns a meeting string.
-  def generate_meeting_url
-    "#{config[:domain]}/#{meeting_url_suffix}"
+  # Returns a string or nil.
+  def meeting_url_id
+    # Return the stored setting value if present. If missing, return the legacy generated format.
+    settings[:meeting_url_id] || meeting_url_suffix_legacy
   end
 
-  # Internal: Generate a URL suffix for this conference.
+  # Internal: Track the unique ID to identify the meeting in an Adobe url.
+  #
+  # Returns nothing
+  def meeting_url_id=(value)
+    settings[:meeting_url_id] = value
+  end
+
+  # Internal: Generate a URL suffix for this conference. Uses a more globally unique approach.
+  #
+  # Returns a URL suffix string of format "canvas-meeting-:root_acount_global_id-:id-:created_at_as_integer".
+  def meeting_url_suffix
+    "canvas-mtg-#{self.context.root_account.global_id}-#{self.id}-#{self.created_at.to_i}"
+  end
+
+  # Internal: Generate a URL suffix for this conference. Uses the legacy approach with overly simple uniqueness
   #
   # Returns a URL suffix string of format "canvas-meeting-:id".
-  def generate_meeting_url_suffix
+  def meeting_url_suffix_legacy
     "canvas-meeting-#{self.id}"
   end
 end
