@@ -28,8 +28,8 @@ describe AdobeConnectConference do
   }
 
   before(:each) do
-    AdobeConnectConference.stubs(:config).returns(CONNECT_CONFIG)
     @conference = AdobeConnectConference.new
+    @conference.stubs(:config).returns(CONNECT_CONFIG)
   end
 
   subject { AdobeConnectConference.new }
@@ -37,11 +37,17 @@ describe AdobeConnectConference do
   context 'with an admin participant' do
     before(:each) do
       @user = User.new(:name => 'Don Draper')
+      AdobeConnect::Service.stubs(:user_session).returns('CookieValue')
+      @conference.expects(:add_host).with(@user).returns(@user)
     end
 
-    it 'should generate an admin url' do
-      CanvasConnect::Service.stubs(:user_session).returns('CookieValue')
-      @conference.expects(:add_host).with(@user).returns(@user)
+    it 'should generate an admin url using unique format if stored' do
+      stored_url = 'canvas-mtg-ACCOUNT_ID-ID-CREATED_SECONDS'
+      @conference.settings[:meeting_url_id] = stored_url
+      @conference.admin_join_url(@user).should == "http://connect.example.com/#{stored_url}"
+    end
+
+    it 'should generate an admin url using legacy format' do
       @conference.admin_join_url(@user).should == "http://connect.example.com/canvas-meeting-#{@conference.id}"
     end
   end
