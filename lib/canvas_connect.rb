@@ -16,8 +16,8 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'adobe_connect'
-require 'canvas_connect/version'
+require "adobe_connect"
+require "canvas_connect/version"
 
 module CanvasConnect
   class ConnectionError < StandardError; end
@@ -39,6 +39,7 @@ module CanvasConnect
       require_dependency File.expand_path('../app/models/adobe_connect_conference.rb', File.dirname(__FILE__))
       require_dependency "canvas/plugins/validators/adobe_connect_validator"
       require_dependency "canvas/plugins/adobe_connect"
+      require_dependency "canvas_connect/meeting_archive"
 
       Canvas::Plugins::AdobeConnect.new
     end
