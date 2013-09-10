@@ -83,23 +83,38 @@ class AdobeConnectConference < WebConference
     end
   end
 
+  # Public: List all of the recordings for a meeting
+  #
+  # Returns an Array of MeetingArchive, or an empty Array if there are no recordings
+  def recordings
+    if key = find_conference_key
+        CanvasConnect::MeetingArchive.retrieve(key).map do |recording|
+        {
+          recording_id: recording.id,
+          duration_minutes: recording.duration.to_i,
+          title: recording.name,
+          updated_at: recording.date_modified,
+          created_at: recording.date_created,
+          playback_url: "#{config[:domain]}#{recording.url_path}",
+        }
+      end
+    else
+      []
+    end
+  end
+
   protected
   # Internal: Retrieve the SCO-ID for this meeting.
   #
   # Returns an SCO-ID string.
   def find_conference_key
-    unless conference_key.present?
-      meeting_node = meeting_folder.contents.xpath("//sco[name=#{meeting_name.inspect}]")
-      # if meeting node exists, get that value
-      if meeting_node.present?
-        self.conference_key = meeting_node.attr('sco-id').value
-      else
-        # meeting node not found (by name)
-        raise CanvasConnect::MeetingNotFound, "Meeting with name '#{meeting_name}' not found"
+    unless @conference_key.present?
+      response = connect_service.sco_by_url(:url_path => meeting_url_suffix)
+      if response.body.at_xpath('//status').attr('code') == 'ok'
+        @conference_key = response.body.xpath('//sco[@sco-id]').attr('sco-id').value
       end
     end
-
-    conference_key
+    @conference_key
   end
 
   # Internal: Register a participant as a host.

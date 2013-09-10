@@ -20,31 +20,33 @@ module CanvasConnect
     ATTRIBUTES = [:name, :url_path, :date_begin, :date_end, :date_modified, :duration, :date_created]
     attr_accessor :meeting_id
 
-    extend ActiveSupport::Memoizable
+    def self.retrieve(meeting_id, client = CanvasConnect.client)
+      result = client.sco_contents(sco_id: meeting_id, filter_icon: 'archive')
+      Array(result.at_xpath('results/scos').try(:children)).map do |archive|
+        MeetingArchive.new(Nokogiri::XML(archive.to_xml))
+      end
+    end
 
     # Public: Create a new MeetingArchive.
     #
     # meeting_id - The id of the meeting on Adobe Connect (must already exist).
     # client - A CanvasConnect::Service to make requests with. (default: CanvasConnect.client)
-    def initialize(meeting_id, client = CanvasConnect.client)
-      @meeting_id = meeting_id
-      @client = client
+    def initialize(archive)
       @attr_cache = {}
+      @archive = archive
+    end
+
+    def id
+      @archive.attr('sco-id')
     end
 
     def method_missing(meth, *args, &block)
       if ATTRIBUTES.include?(meth)
-        @attr_cache[meth] ||= archive.at_xpath("//#{meth.to_s.dasherize}").try(:text)
+        @attr_cache[meth] ||= @archive.at_xpath("//#{meth.to_s.dasherize}").try(:text)
       else
         super
       end
     end
-
-    def archive
-      @client.sco_contents(sco_id: @meeting_id, filter_icon: 'archive')
-    end
-    memoize :archive
-    private :archive
 
   end
 end

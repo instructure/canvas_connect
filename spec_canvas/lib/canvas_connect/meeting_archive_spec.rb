@@ -22,7 +22,7 @@ describe CanvasConnect::Response do
 
   describe CanvasConnect::MeetingArchive do
 
-    subject { CanvasConnect::MeetingArchive(38230, nil) }
+    subject { CanvasConnect::MeetingArchive.retrieve(38230, nil).first }
 
     before (:each) do
       subject.should_receive(:archive) {
