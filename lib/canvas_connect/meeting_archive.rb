@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
+require 'active_support/core_ext/object'
+
 module CanvasConnect
   class MeetingArchive
     ATTRIBUTES = [:name, :url_path, :date_begin, :date_end, :date_modified, :duration, :date_created]
@@ -22,7 +24,7 @@ module CanvasConnect
 
     def self.retrieve(meeting_id, client = CanvasConnect.client)
       result = client.sco_contents(sco_id: meeting_id, filter_icon: 'archive')
-      Array(result.at_xpath('results/scos').try(:children)).map do |archive|
+      result.css('results scos').map do |archive|
         MeetingArchive.new(Nokogiri::XML(archive.to_xml))
       end
     end
@@ -42,7 +44,7 @@ module CanvasConnect
 
     def method_missing(meth, *args, &block)
       if ATTRIBUTES.include?(meth)
-        @attr_cache[meth] ||= @archive.at_xpath("//#{meth.to_s.dasherize}").try(:text)
+        @attr_cache[meth] ||= @archive.at_css("#{meth.to_s.dasherize}").try(:text)
       else
         super
       end
