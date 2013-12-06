@@ -24,7 +24,7 @@ module CanvasConnect
 
     def self.retrieve(meeting_id, client = CanvasConnect.client)
       result = client.sco_contents(sco_id: meeting_id, filter_icon: 'archive')
-      result.css('results scos').map do |archive|
+      (result.at_css('results scos').try(:element_children) || []).map do |archive|
         MeetingArchive.new(Nokogiri::XML(archive.to_xml))
       end
     end
