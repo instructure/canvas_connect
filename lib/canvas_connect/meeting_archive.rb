@@ -24,15 +24,14 @@ module CanvasConnect
 
     def self.retrieve(meeting_id, client = CanvasConnect.client)
       result = client.sco_contents(sco_id: meeting_id, filter_icon: 'archive')
-      (result.at_css('results scos').try(:element_children) || []).map do |archive|
-        MeetingArchive.new(Nokogiri::XML(archive.to_xml))
+      result.xpath('/results/scos/sco').map do |archive|
+        MeetingArchive.new(archive)
       end
     end
 
     # Public: Create a new MeetingArchive.
     #
-    # meeting_id - The id of the meeting on Adobe Connect (must already exist).
-    # client - A CanvasConnect::Service to make requests with. (default: CanvasConnect.client)
+    # archive - A Nokogiri::XML representation of the Connect response to to sco-contents action.
     def initialize(archive)
       @attr_cache = {}
       @archive = archive
@@ -43,12 +42,8 @@ module CanvasConnect
     end
 
     def method_missing(meth, *args, &block)
-      if ATTRIBUTES.include?(meth)
-        @attr_cache[meth] ||= @archive.at_css("#{meth.to_s.dasherize}").try(:text)
-      else
-        super
-      end
+      return super unless ATTRIBUTES.include?(meth.to_sym)
+      @attr_cache[meth] ||= @archive.at_xpath("//#{meth.to_s.dasherize}").try(:text)
     end
-
   end
 end
