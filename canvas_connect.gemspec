@@ -11,6 +11,7 @@ Gem::Specification.new do |gem|
   gem.description   = %q{Canvas Connect is an Adobe Connect plugin for the Instructure Canvas LMS. It allows teachers and administrators to create and launch Connect conferences directly from their courses.}
   gem.summary       = %q{Adobe Connect integration for Instructure Canvas (http://instructure.com).}
   gem.homepage      = 'http://instructure.com'
+  gem.license       = 'MIT'
 
   gem.files         = `git ls-files`.split($/)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
