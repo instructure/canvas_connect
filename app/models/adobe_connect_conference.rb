@@ -52,7 +52,7 @@ class AdobeConnectConference < WebConference
   def admin_join_url(admin, _ = nil)
     user = add_host(admin)
 
-    if config[:use_sis_ids] == "no" 
+    if config[:use_sis_ids] == "no"
       settings = { :username => user.username, :password => user.password,
         :domain => CanvasConnect.config[:domain] }
 
@@ -62,7 +62,7 @@ class AdobeConnectConference < WebConference
       "#{meeting_url}?session=#{service.session}"
     else
       meeting_url
-    end 
+    end
   end
 
   # Public: Add a participant to the conference and create a meeting URL.
@@ -76,9 +76,9 @@ class AdobeConnectConference < WebConference
   def participant_join_url(user, _ = nil)
     if grants_right?(user, nil, :initiate)
       admin_join_url(user)
-    elsif config[:use_sis_ids] == "no" 
+    elsif config[:use_sis_ids] == "no"
       "#{meeting_url}?guestName=#{URI.escape(user.name)}"
-    else 
+    else
       meeting_url
     end
   end
@@ -88,7 +88,9 @@ class AdobeConnectConference < WebConference
   # Returns an Array of MeetingArchive, or an empty Array if there are no recordings
   def recordings
     if key = find_conference_key
-        CanvasConnect::MeetingArchive.retrieve(key).map do |recording|
+      recordings = CanvasConnect::MeetingArchive.retrieve(key)
+      recordings.each { |r| make_conference_public(r.id) }
+      recordings.map do |recording|
         {
           recording_id: recording.id,
           duration_minutes: recording.duration.to_i,
