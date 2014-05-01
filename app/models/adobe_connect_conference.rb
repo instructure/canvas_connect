@@ -89,7 +89,7 @@ class AdobeConnectConference < WebConference
   def recordings
     if key = find_conference_key
       recordings = CanvasConnect::MeetingArchive.retrieve(key)
-      recordings.each { |r| make_conference_public(r.id) }
+      recordings.each { |r| make_meeting_public(r.id) }
       recordings.map do |recording|
         {
           recording_id: recording.id,
