@@ -40,12 +40,8 @@ module CanvasConnect
     Canvas::Plugins::AdobeConnect.new
   end
 
-  if CANVAS_RAILS2
-    Rails.configuration.to_prepare(&configure_method)
-  else
-    class Railtie < Rails::Railtie; end
-    Railtie.config.to_prepare(&configure_method)
-  end
+  class Railtie < Rails::Railtie; end
+  Railtie.config.to_prepare(&configure_method)
 
   # Public: Find the plugin configuration.
   #
