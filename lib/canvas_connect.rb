@@ -60,17 +60,21 @@ module CanvasConnect
   #
   # Returns a AdobeConnect::Service.
   def self.client
-    unless @client
-      settings = self.config
+    @clients ||= {}
+    settings = self.config
+    client = @clients[settings]
+
+    unless client
       connect_settings = {
         :username => settings[:login],
         :password => settings[:password_dec],
         :domain   => settings[:domain]
       }
-      @client = AdobeConnect::Service.new(connect_settings)
-      @client.log_in
+      client = AdobeConnect::Service.new(connect_settings)
+      client.log_in
+      @clients[settings] = client
     end
 
-    @client
+    client
   end
 end
