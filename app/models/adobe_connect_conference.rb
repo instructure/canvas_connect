@@ -18,7 +18,7 @@
 
 class AdobeConnectConference < WebConference
 
-  MAX_USERNAME_LENGTH = 60
+  MAX_NAME_LENGTH = 60
 
   # Public: Start a new conference and return its key. (required by WebConference)
   #
@@ -161,7 +161,7 @@ class AdobeConnectConference < WebConference
 
     preferred_extension = 'canvas-connect'
     current_address = user.email
-    allowed_length = MAX_USERNAME_LENGTH - current_address.length
+    allowed_length = MAX_NAME_LENGTH - current_address.length
     allowed_length -= 1 unless current_address.match(/\+/)
     postfix = if allowed_length >= preferred_extension.length
       preferred_extension
@@ -262,7 +262,15 @@ class AdobeConnectConference < WebConference
                     'Canvas'
                   end
 
-    "#{course_code}: #{self.title} [#{self.id}]"
+    name = "#{course_code}: #{self.title} [#{self.id}]"
+    if name.length > MAX_NAME_LENGTH
+      name = "#{course_code} [#{self.id}]"
+      if name.length > MAX_NAME_LENGTH
+        suffix = "... [#{self.id}]"
+        name = "#{course_code.to_s[0...(MAX_NAME_LENGTH - suffix.length)]}" + suffix
+      end
+    end
+    name
   end
 
   # Internal: Get the unique ID to identify the meeting in an Adobe url.
