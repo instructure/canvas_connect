@@ -17,31 +17,19 @@
 #
 
 require "adobe_connect"
-require "canvas_connect/version"
 
 module CanvasConnect
   class ConnectionError < StandardError; end
   class MeetingFolderError < StandardError; end
   class MeetingNotFound < StandardError; end
 
-  configure_method = Proc.new do
-    view_path = File.expand_path('../app/views', File.dirname(__FILE__))
-    unless ApplicationController.view_paths.include?(view_path)
-      ApplicationController.view_paths.unshift(view_path)
+  class Engine < Rails::Engine
+    config.autoload_paths << File.expand_path(File.join(__FILE__, ".."))
+
+    config.to_prepare do
+      Canvas::Plugins::AdobeConnect.new
     end
-
-    ActiveSupport::Dependencies.autoload_paths << File.expand_path('../app/models', File.dirname(__FILE__))
-
-    require_dependency File.expand_path('../app/models/adobe_connect_conference.rb', File.dirname(__FILE__))
-    require_dependency "canvas/plugins/validators/adobe_connect_validator"
-    require_dependency "canvas/plugins/adobe_connect"
-    require_dependency "canvas_connect/meeting_archive"
-
-    Canvas::Plugins::AdobeConnect.new
   end
-
-  class Railtie < Rails::Railtie; end
-  Railtie.config.to_prepare(&configure_method)
 
   # Public: Find the plugin configuration.
   #
