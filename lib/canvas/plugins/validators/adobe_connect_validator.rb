@@ -39,7 +39,7 @@ module Canvas
             if valid?(filtered_settings)
               filtered_settings
             else
-              plugin_setting.errors.add_to_base(I18n.t('canvas.plugins.errors.all_fields_required', 'All fields are required'))
+              plugin_setting.errors.add(:base, I18n.t('canvas.plugins.errors.all_fields_required', 'All fields are required'))
               false
             end
           end
