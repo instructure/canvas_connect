@@ -24,7 +24,7 @@ module CanvasConnect
   class MeetingNotFound < StandardError; end
 
   class Engine < Rails::Engine
-    config.autoload_paths << File.expand_path(File.join(__FILE__, ".."))
+    config.paths['lib'].eager_load!
 
     config.to_prepare do
       Canvas::Plugins::AdobeConnect.new
