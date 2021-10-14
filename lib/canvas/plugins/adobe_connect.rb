@@ -16,6 +16,8 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
+require 'canvas_connect/version'
+
 module Canvas
   module Plugins
     class AdobeConnect
