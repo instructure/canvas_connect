@@ -111,9 +111,13 @@ class AdobeConnectConference < WebConference
   # Returns an SCO-ID string.
   def find_conference_key
     unless @conference_key.present?
-      response = connect_service.sco_by_url(:url_path => meeting_url_suffix)
-      if response.body.at_xpath('//status').attr('code') == 'ok'
-        @conference_key = response.body.xpath('//sco[@sco-id]').attr('sco-id').value
+      begin
+        response = connect_service.sco_by_url(:url_path => meeting_url_suffix)
+        if response.body.at_xpath('//status').attr('code') == 'ok'
+          @conference_key = response.body.xpath('//sco[@sco-id]').attr('sco-id').value
+        end
+      rescue => error
+        # log somewhere?
       end
     end
     @conference_key
