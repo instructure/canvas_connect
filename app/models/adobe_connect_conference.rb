@@ -16,6 +16,8 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
+require "canvas_errors"
+
 class AdobeConnectConference < WebConference
 
   MAX_NAME_LENGTH = 60
@@ -116,8 +118,8 @@ class AdobeConnectConference < WebConference
         if response.body.at_xpath('//status').attr('code') == 'ok'
           @conference_key = response.body.xpath('//sco[@sco-id]').attr('sco-id').value
         end
-      rescue => error
-        # log somewhere?
+      rescue => e
+        CanvasErrors.capture_exception(:adobe_connect_conference, e, :warn)
       end
     end
     @conference_key
