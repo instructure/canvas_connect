@@ -16,6 +16,8 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
+require "canvas_errors"
+
 class AdobeConnectConference < WebConference
 
   MAX_NAME_LENGTH = 60
@@ -111,9 +113,13 @@ class AdobeConnectConference < WebConference
   # Returns an SCO-ID string.
   def find_conference_key
     unless @conference_key.present?
-      response = connect_service.sco_by_url(:url_path => meeting_url_suffix)
-      if response.body.at_xpath('//status').attr('code') == 'ok'
-        @conference_key = response.body.xpath('//sco[@sco-id]').attr('sco-id').value
+      begin
+        response = connect_service.sco_by_url(:url_path => meeting_url_suffix)
+        if response.body.at_xpath('//status').attr('code') == 'ok'
+          @conference_key = response.body.xpath('//sco[@sco-id]').attr('sco-id').value
+        end
+      rescue => e
+        CanvasErrors.capture_exception(:adobe_connect_conference, e, :warn)
       end
     end
     @conference_key
