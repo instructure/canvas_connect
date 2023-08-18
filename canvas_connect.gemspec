@@ -10,7 +10,7 @@ Gem::Specification.new do |gem|
   gem.email         = ['zachp@instructure.com']
   gem.description   = %q{Canvas Connect is an Adobe Connect plugin for the Instructure Canvas LMS. It allows teachers and administrators to create and launch Connect conferences directly from their courses.}
   gem.summary       = %q{Adobe Connect integration for Instructure Canvas (http://instructure.com).}
-  gem.homepage      = 'http://instructure.com'
+  gem.homepage      = 'https://github.com/instructure/canvas_connect'
   gem.license       = 'MIT'
 
   gem.files         = `git ls-files`.split($/)
@@ -19,6 +19,6 @@ Gem::Specification.new do |gem|
   gem.require_paths = %w{app lib}
 
   gem.add_dependency 'rake', '>= 0.9.6'
-  gem.add_dependency 'adobe_connect', '~> 1.0.0'
+  gem.add_dependency 'adobe_connect', '~> 1.0'
 end
 
